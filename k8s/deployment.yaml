@@ -1,3 +1,42 @@
+# Deployment Postgre
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgre
+spec:  
+  selector:
+    matchLabels:
+      app: postgre
+  template:
+    metadata:
+      labels:
+        app: postgre
+    spec:
+      containers:
+      - name: postgre
+        image: postgres:13.16
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_USER
+          value: "ecommerce"
+        - name: POSTGRES_PASSWORD
+          value: "Pg1234"
+        - name: POSTGRES_DB
+          value: "ecommerce"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgre
+spec:
+  selector:
+    app: postgre
+  ports:
+  - port: 5432
+    targetPort: 5432
+---
+# Deployment Fake Shop
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -17,6 +56,19 @@ spec:
         image: gabrielcarlossantos/fake-shop:v1
         ports:
         - containerPort: 5000
+        env:
+        - name: DB_HOST
+          value: "postgre"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          value: "ecommerce"
+        - name: DB_PASSWORD
+          value: "Pg1234"
+        - name: DB_NAME
+          value: "ecommerce"
+        - name: FLASK_APP
+          value: "index.py"
 ---
 apiVersion: v1
 kind: Service
@@ -26,7 +78,6 @@ spec:
   selector:
     app: fake-shop
   ports:
-  - port: 8080
+  - port: 80
     targetPort: 5000
-    nodePort: 30000
-  type: NodePort
+  type: LoadBalancer
